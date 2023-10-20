@@ -11,7 +11,21 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
     PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
         for (auto &F : M) {
             errs() << "I saw a function called " << F.getName() << "!\n";
+            errs() << "Function body:\n" << F << "\n";
+            for (auto& B : F) {
+                errs() << "Basic block:\n" << B << "\n";
+                for (auto& I : B) {
+                    errs() << "Instruction: " << I << "\n";
+                    if (auto* op = dyn_cast<BinaryOperator>(&I)) {
+                        errs() << "op\n" << op << "\n";
+                    }
+                }
+            }
         }
+        // LoopInfo &LI = getAnalysis<LoopInfo>();
+        // for (auto &loop : LoopInfo) {
+        //     errs() << "loop:\n" << loop << "\n";
+        // }
         return PreservedAnalyses::all();
     };
 };
