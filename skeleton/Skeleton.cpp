@@ -1,7 +1,10 @@
-#include "llvm/Pass.h"
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/PassPlugin.h"
-#include "llvm/Support/raw_ostream.h"
+#include "llvm-14/llvm/Pass.h"
+#include "llvm-14/llvm/Passes/PassBuilder.h"
+#include "llvm-14/llvm/Passes/PassPlugin.h"
+#include "llvm-14/llvm/Support/raw_ostream.h"
+
+#include "llvm-14/llvm/IR/DebugLoc.h"
+#include "llvm-14/llvm/IR/DebugInfoMetadata.h"
 
 using namespace llvm;
 
@@ -36,6 +39,16 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                             if (false_dst->hasName()) {
                                 errs() << "false dest: " << false_dst->getName() << "\n";
                             }
+
+                            // Get the line number
+                            const DebugLoc &debugInfo = I.getDebugLoc();
+
+                            std::string directory = std::string(debugInfo->getDirectory());
+                            std::string filePath = std::string(debugInfo->getFilename());
+                            int line = debugInfo->getLine();
+                            int column = debugInfo->getColumn();
+
+                            errs() << directory << ", " << filePath << ", " << line << ", " << column << "\n";
                         }
                         
                     }
