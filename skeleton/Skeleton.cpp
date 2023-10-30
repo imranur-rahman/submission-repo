@@ -27,7 +27,9 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                     // }
                     if (auto* op = dyn_cast<BranchInst>(&I)) {
 
+                        
                         if (op->isConditional()) {
+                            // TODO: Did we cover every branch inst? switch...
                             Value* condition = op->getCondition();
                             BasicBlock* true_dst = op->getSuccessor(0);
                             BasicBlock* false_dst = op->getSuccessor(1);
@@ -72,7 +74,21 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                             errs() << directory << ", " << filePath << ", " << line << ", " << column << "\n";
 
                         }
-                        
+                    }
+                    if (auto* op = dyn_cast<ICmpInst>(&I)) {
+                        errs() << "ICmpInst instance" << "\n";
+                        CmpInst::Predicate pr = op->getSignedPredicate();
+                        errs() << pr << "\n";
+                        for (Use& U: I.operands()) {
+                            Value* v = U.get();
+                            if (dyn_cast<Instruction>(v)) {
+                                errs() << "\"" << *dyn_cast<Instruction>(v) << "\"" << " -> " << "\"" << I << "\"" << ";\n";
+                            }
+                            if (v->getName() != "") {
+                                errs() << "\"" << v->getName() << "\"" << " -> " << "\"" << I << "\"" << ";\n";
+                                errs() << "\"" << v->getName() << "\"" << " [ color = red ]\n";
+                            }
+                        }
                     }
                 }
             }
