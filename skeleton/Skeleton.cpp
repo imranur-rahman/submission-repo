@@ -6,6 +6,9 @@
 #include "llvm-14/llvm/IR/DebugLoc.h"
 #include "llvm-14/llvm/IR/DebugInfoMetadata.h"
 
+#include "llvm-14/llvm/IR/Instructions.h"
+#include <iostream>
+
 using namespace llvm;
 
 namespace {
@@ -49,6 +52,25 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                             int column = debugInfo->getColumn();
 
                             errs() << directory << ", " << filePath << ", " << line << ", " << column << "\n";
+
+                            // Get first successor's line number
+                            Instruction* firstLine = true_dst->getFirstNonPHI();
+                            const DebugLoc &di = firstLine->getDebugLoc();
+                            directory = std::string(di->getDirectory());
+                            filePath = std::string(di->getFilename());
+                            line = di->getLine();
+                            column = di->getColumn();
+                            errs() << directory << ", " << filePath << ", " << line << ", " << column << "\n";
+
+                            // Get second successor's line number
+                            firstLine = false_dst->getFirstNonPHI();
+                            const DebugLoc &dg = firstLine->getDebugLoc();
+                            directory = std::string(dg->getDirectory());
+                            filePath = std::string(dg->getFilename());
+                            line = dg->getLine();
+                            column = dg->getColumn();
+                            errs() << directory << ", " << filePath << ", " << line << ", " << column << "\n";
+
                         }
                         
                     }
