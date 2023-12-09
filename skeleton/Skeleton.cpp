@@ -9,6 +9,7 @@
 #include "llvm-14/llvm/IR/Instructions.h"
 #include <iostream>
 #include <vector>
+#include <deque>
 
 using namespace llvm;
 
@@ -76,12 +77,39 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                             errs() << directory << ", " << filePath << ", " << line << ", " << column << "\n";
 
                             // do the analysis here
-                            std::vector<Instruction*> worklist;
+                            std::deque<Instruction*> worklist;
                             for (Use& U: I.operands()) {
                                 Value* v = U.get();
-                                if (auto* inst = dyn_cast<Instruction>(v)) {
+                                if (Instruction* inst = dyn_cast<Instruction>(v)) {
                                     errs() << "\"" << *dyn_cast<Instruction>(v) << "\"" << " -> " << "\"" << I << "\"" << ";\n";
-                                    errs() << U << "\n";
+                                    errs() << *U << "\n";
+                                    worklist.push_back(inst);
+                                }
+                            }
+                            // It should be one at this point
+                            errs() << "worklist size: " << worklist.size() << "\n";
+
+                            // Do a BFS type analysis here
+                            errs() << "bfs" << "\n";
+                            while (worklist.empty() == false) {
+                                Instruction* curr_inst = worklist.front();
+                                errs() << "curr_inst: " << *curr_inst << "\n";
+                                worklist.pop_front();
+                                // base condition
+                                if (AllocaInst* AI = dyn_cast<AllocaInst>(curr_inst)) {
+                                    //stack allocation
+                                    errs() << "allocation instruction: " << *AI << "\n";
+                                    
+                                }
+
+                                for (Use& U: curr_inst->operands()) {
+                                    //errs() << *U << "\n";
+                                    Value* v = U.get();
+                                    
+                                    if (Instruction* prev_inst = dyn_cast<Instruction>(v)) {
+                                        errs() << "next _inst " << " -> " << *prev_inst << "\n";
+                                        worklist.push_back(prev_inst);
+                                    }
                                 }
                             }
 
