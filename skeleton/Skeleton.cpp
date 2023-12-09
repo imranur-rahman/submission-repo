@@ -5,15 +5,19 @@
 
 #include "llvm-14/llvm/IR/DebugLoc.h"
 #include "llvm-14/llvm/IR/DebugInfoMetadata.h"
+#include "llvm-14/llvm/IR/DebugInfo.h"
 
 #include "llvm-14/llvm/IR/Instructions.h"
 #include <iostream>
 #include <vector>
 #include <deque>
+#include <map>
 
 using namespace llvm;
 
 namespace {
+
+std::map<int, std::string>variable_map;
 
 struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
     PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
@@ -24,9 +28,15 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                 errs() << "Basic block:\n" << B << "\n";
                 for (auto& I : B) {
                     errs() << "Instruction: " << I << "\n";
-                    // if (auto* op = dyn_cast<BinaryOperator>(&I)) {
-                    //     errs() << "op\n" << op << "\n";
-                    // }
+                    if (DbgDeclareInst* ddi = dyn_cast<DbgDeclareInst>(&I)) {
+                        errs() << "debug declare inst: " << I << "\n";
+                        errs() << ddi->getVariable()->getName() << "\n";
+                        errs() << ddi->getAddress() << "\n";
+                        const DebugLoc& dl = ddi->getDebugLoc();
+                        int line = dl.getLine();
+                        errs() << "line no: " << line << "\n";
+                        variable_map[line] = ddi->getVariable()->getName();
+                    }
                     if (auto* op = dyn_cast<BranchInst>(&I)) {
 
                         
@@ -99,7 +109,30 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                                 if (AllocaInst* AI = dyn_cast<AllocaInst>(curr_inst)) {
                                     //stack allocation
                                     errs() << "allocation instruction: " << *AI << "\n";
-                                    
+                                    // check if any of it's users are scanf
+                                    errs() << "users of this allocation instruction: \n";
+                                    for (User* user: curr_inst->users()) {
+                                        errs() << *user << "\n";
+                                        Instruction* user_inst = dyn_cast<Instruction>(user);
+                                        errs() << *user_inst << "\n";
+                                        if (auto *CI = dyn_cast<CallInst>(user_inst)) {
+                                            StringRef callee_name = CI->getCalledFunction()->getName();
+                                            errs() << "called function name: " << callee_name << "\n";
+                                            if (callee_name == "__isoc99_scanf") {
+                                                TinyPtrVector<DbgDeclareInst *> DIs = FindDbgDeclareUses(AI);
+                                                for (DbgDeclareInst *ddi: DIs) {
+                                                    dbgs() << "dbg inst: " << *ddi << '\n';
+                                                    errs() << ddi->getVariable()->getName() << "\n";
+                                                    const DebugLoc& dl = ddi->getDebugLoc();
+                                                    int line = dl.getLine();
+                                                    errs() << "\n\n" << "Line " << line << ": " << ddi->getVariable()->getName() << "\n\n";
+                                                }
+                                                
+
+                                            }
+                                        }
+                                    }
+                                    errs() << "users of this allocation instruction end \n";
                                 }
 
                                 for (Use& U: curr_inst->operands()) {
