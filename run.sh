@@ -1,5 +1,5 @@
 #!/bin/bash
-cd llvm-pass-skeleton
+# cd llvm-pass-skeleton
 mkdir build
 cd build
 cmake ..

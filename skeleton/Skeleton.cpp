@@ -8,6 +8,7 @@
 
 #include "llvm-14/llvm/IR/Instructions.h"
 #include <iostream>
+#include <vector>
 
 using namespace llvm;
 
@@ -29,6 +30,7 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
 
                         
                         if (op->isConditional()) {
+                            errs() << "######################################################################################################\n";
                             // TODO: Did we cover every branch inst? switch...
                             Value* condition = op->getCondition();
                             BasicBlock* true_dst = op->getSuccessor(0);
@@ -73,22 +75,38 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                             column = dg->getColumn();
                             errs() << directory << ", " << filePath << ", " << line << ", " << column << "\n";
 
+                            // do the analysis here
+                            std::vector<Instruction*> worklist;
+                            for (Use& U: I.operands()) {
+                                Value* v = U.get();
+                                if (auto* inst = dyn_cast<Instruction>(v)) {
+                                    errs() << "\"" << *dyn_cast<Instruction>(v) << "\"" << " -> " << "\"" << I << "\"" << ";\n";
+                                    errs() << U << "\n";
+                                }
+                            }
+
+                            errs() << "######################################################################################################\n";
+
                         }
                     }
                     if (auto* op = dyn_cast<ICmpInst>(&I)) {
+                        errs() << "-----------------------------------------------------------------------------------------------------\n";
                         errs() << "ICmpInst instance" << "\n";
-                        CmpInst::Predicate pr = op->getSignedPredicate();
-                        errs() << pr << "\n";
+                        // CmpInst::Predicate pr = op->getSignedPredicate();
+                        // errs() << pr << "\n";
                         for (Use& U: I.operands()) {
                             Value* v = U.get();
-                            if (dyn_cast<Instruction>(v)) {
+                            if (auto* inst = dyn_cast<Instruction>(v)) {
                                 errs() << "\"" << *dyn_cast<Instruction>(v) << "\"" << " -> " << "\"" << I << "\"" << ";\n";
+                                //errs() << inst->dump() << "\n";
                             }
-                            if (v->getName() != "") {
-                                errs() << "\"" << v->getName() << "\"" << " -> " << "\"" << I << "\"" << ";\n";
-                                errs() << "\"" << v->getName() << "\"" << " [ color = red ]\n";
-                            }
+                            // if (v->getName() != "") {
+                            //     errs() << "\"" << v->getName() << "\"" << " -> " << "\"" << I << "\"" << ";\n";
+                            //     errs() << "\"" << v->getName() << "\"" << " [ color = red ]\n";
+                            // }
+                            
                         }
+                        errs() << "-----------------------------------------------------------------------------------------------------\n";
                     }
                 }
             }

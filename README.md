@@ -14,6 +14,10 @@ Install Clang:
 
     $ sudo apt install clang
 
+Install cmake:
+
+    $ sudo apt install cmake
+
 Build and Run (shortcut):
 
     $ chmod +x run.sh
