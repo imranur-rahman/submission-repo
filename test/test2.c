@@ -2,7 +2,7 @@
 //# include <stdlib.h>
 
 int main() {
-	char* str1[1000];
+	char str1[1000];
 	FILE* fp = fopen("file.txt", "r");
 	char c;
 	int len = 0;
