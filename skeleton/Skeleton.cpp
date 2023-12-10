@@ -169,16 +169,35 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                                     // }
                                     errs() << "value operand" << *storeInst->getValueOperand() << "\n";
                                     errs() << "printing operands\n";
+                                    bool should_check = false;
                                     for (Use& U: curr_inst->operands()) {
                                         errs() << *U << "\n";
+                                        Value* v = U.get();
+                                    
+                                        if (Instruction* target_inst = dyn_cast<Instruction>(v)) {
+                                            errs() << "target_inst " << " -> " << *target_inst << "\n";
+                                            if (CallInst* callInst = dyn_cast<CallInst>(v)) {
+                                                errs() << "callInst: " << *callInst << "\n";
+                                                Function* called_function = callInst->getCalledFunction();
+                                                StringRef callee_name = called_function->getName();
+                                                errs() << "func name: " << callee_name << "\n";
+                                                if (callee_name == "fopen") {
+                                                    should_check = true;
+                                                }
+                                                errs() << "should check: " << should_check << "\n";
+                                            }
+                                        }
                                     }
+                                    // if (should_continue)
+                                    //     continue;
 
                                     // if (Metadata *Meta = cast<MetadataAsValue>(curr_inst->getOperand(0))->getMetadata()) {
                                     //     errs() << "metadata: " << *Meta << "\n";
                                     // }
                                     errs() << "printing metadata\n";
-                                    if (storeInst->hasMetadata()) {
-                                        SmallVector<int>s;
+                                    if (storeInst->hasMetadata() && should_check) {
+                                        // find the users of this store inst
+                                        
                                         SmallVector< std::pair< unsigned, MDNode* >> MDs;
                                         storeInst->getAllMetadata(MDs);
                                         for (std::pair< unsigned, MDNode* >& it: MDs) {
@@ -190,36 +209,11 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                                             errs() << "Metadata ID: " << it.second->getMetadataID() << "\n";
                                             const DebugLoc* debugLoc = new DebugLoc(it.second);
                                             unsigned line = debugLoc->getLine();
-                                            errs() << "Line " << line << ": size of file " << variable_map[line] << "\n";
+                                            if (variable_map.find(line) != variable_map.end())
+                                                errs() << "\n\nLine " << line << ": size of file " << variable_map[line] << "\n\n";
                                         }
                                     }
                                     
-                                }
-                                if (CallInst* callInst = dyn_cast<CallInst>(curr_inst)) {
-                                    errs() << "callInst: " << *callInst << "\n";
-                                    Function* called_function = callInst->getCalledFunction();
-                                    StringRef callee_name = called_function->getName();
-                                    errs() << "called function name: " << callee_name << "\n";
-                                    if (callee_name == "fopen") {
-                                        TinyPtrVector<DbgDeclareInst *> DIs = FindDbgDeclareUses(callInst);
-                                        // There is no debug usage for this case
-                                        for (DbgDeclareInst *ddi: DIs) {
-                                            dbgs() << "dbg inst: " << *ddi << '\n';
-                                            errs() << ddi->getVariable()->getName() << "\n";
-                                            const DebugLoc& dl = ddi->getDebugLoc();
-                                            int line = dl.getLine();
-                                            errs() << "\n\n" << "Line " << line << ": " << ddi->getVariable()->getName() << "\n\n";
-                                        }
-                                        errs() << "args of this callInst\n";
-                                        for (Use& args: callInst->data_ops()) {
-                                            errs() << *args << "\n";
-                                        }
-                                        // errs() << "called func: " << callInst->getCalledFunction()->getOperand(0) << "\n";
-                                        // errs() << "arguments \n";
-                                        // for (Argument& it: called_function->args()) {
-                                        //     errs() << it.dump() << "\n";
-                                        // }
-                                    }
                                 }
 
                                 // Use the load inst of <store, load> chain to find out the seminal input
@@ -230,22 +224,7 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                                         errs() << *user << "\n";
                                         Instruction* user_inst = dyn_cast<Instruction>(user);
                                         errs() << *user_inst << "\n";
-                                        // if (auto *CI = dyn_cast<CallInst>(user_inst)) {
-                                        //     StringRef callee_name = CI->getCalledFunction()->getName();
-                                        //     errs() << "called function name: " << callee_name << "\n";
-                                        //     if (callee_name == "__isoc99_scanf") {
-                                        //         TinyPtrVector<DbgDeclareInst *> DIs = FindDbgDeclareUses(AI);
-                                        //         for (DbgDeclareInst *ddi: DIs) {
-                                        //             dbgs() << "dbg inst: " << *ddi << '\n';
-                                        //             errs() << ddi->getVariable()->getName() << "\n";
-                                        //             const DebugLoc& dl = ddi->getDebugLoc();
-                                        //             int line = dl.getLine();
-                                        //             errs() << "\n\n" << "Line " << line << ": " << ddi->getVariable()->getName() << "\n\n";
-                                        //         }
-                                                
-
-                                        //     }
-                                        // }
+                                        
                                         worklist.push_back(user_inst);
                                     }
                                     errs() << "users of this load instruction end \n";
@@ -267,32 +246,9 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
 
                         }
                     }
-                    if (auto* op = dyn_cast<ICmpInst>(&I)) {
-                        errs() << "-----------------------------------------------------------------------------------------------------\n";
-                        errs() << "ICmpInst instance" << "\n";
-                        // CmpInst::Predicate pr = op->getSignedPredicate();
-                        // errs() << pr << "\n";
-                        for (Use& U: I.operands()) {
-                            Value* v = U.get();
-                            if (auto* inst = dyn_cast<Instruction>(v)) {
-                                errs() << "\"" << *dyn_cast<Instruction>(v) << "\"" << " -> " << "\"" << I << "\"" << ";\n";
-                                //errs() << inst->dump() << "\n";
-                            }
-                            // if (v->getName() != "") {
-                            //     errs() << "\"" << v->getName() << "\"" << " -> " << "\"" << I << "\"" << ";\n";
-                            //     errs() << "\"" << v->getName() << "\"" << " [ color = red ]\n";
-                            // }
-                            
-                        }
-                        errs() << "-----------------------------------------------------------------------------------------------------\n";
-                    }
                 }
             }
         }
-        // LoopInfo &LI = getAnalysis<LoopInfo>();
-        // for (auto &loop : LoopInfo) {
-        //     errs() << "loop:\n" << loop << "\n";
-        // }
         return PreservedAnalyses::all();
     };
 };
