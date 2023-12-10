@@ -1,7 +1,5 @@
-# llvm-pass-skeleton
+# CSC 512 Part 2 & 3
 
-A completely useless LLVM pass.
-It's for LLVM 17.
 
 Install LLVM:
 
@@ -18,14 +16,19 @@ Install cmake:
 
     $ sudo apt install cmake
 
-Build and Run (shortcut):
+Install libstdc++ (for running the last test case):
+
+    $ sudo apt install libstdc++-12-dev
+    $ sudo apt-get install libc++-dev
+
+Build and Run (shortcut to run inside of the folder):
 
     $ chmod +x run.sh
     $ ./run.sh
 
 Build:
 
-    $ cd llvm-pass-skeleton
+    $ cd submission-repo
     $ mkdir build
     $ cd build
     $ cmake ..
@@ -34,4 +37,4 @@ Build:
 
 Run:
 
-    $ clang -fpass-plugin=`echo build/skeleton/SkeletonPass.*` something.c
+    $ clang -g -O0 -fpass-plugin=`echo build/skeleton/SkeletonPass.*` something.c

@@ -3,7 +3,7 @@ int fun(int i) {
 }
 
 int main () {
-    void (*func_ptr)(int) = &fun;
+    int (*func_ptr)(int) = &fun;
     (*func_ptr)(10);
 
     int c;
