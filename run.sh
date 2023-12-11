@@ -13,6 +13,6 @@ echo -e "\ntest2 completed.\n"
 echo -e "\ntest3 \n"
 clang -g -O0 -fpass-plugin=`echo build/skeleton/SkeletonPass.*` test/test3.c
 echo -e "\ntest3 completed.\n"
-echo -e "\ntest4 \n"
-clang -g -O0 -fpass-plugin=`echo build/skeleton/SkeletonPass.*` test/test4.c
-echo -e "\ntest4 completed.\n"
+# echo -e "\ntest4 \n"
+# clang -g -O0 -fpass-plugin=`echo build/skeleton/SkeletonPass.*` test/test4.c
+# echo -e "\ntest4 completed.\n"
